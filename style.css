@@ -23,6 +23,15 @@ body {
 	background-color: black;
 }
 
+/* Wide screens (phones in landscape): common.js scales the body down to fit the height */
+body {
+	transform-origin: top center;
+}
+html.fit-height,
+html.fit-height body {
+	overflow: hidden;
+}
+
 /* disables scroll bar b/c it messes with % units like margins */
 body::-webkit-scrollbar {
 	display: none;
@@ -175,6 +184,47 @@ html {
 	outline: none;
 }
 #open-settings[data-title]:hover::after {
+	left: 2.6vw;
+	bottom: auto;
+	top: 0.45vw;
+}
+
+/* In-game fullscreen toggle: right of the gear, dimmed like it */
+#game-fullscreen {
+	top: 1.4vw;
+	left: 6.2vw;
+	width: 2vw;
+	height: 2vw;
+	cursor: pointer;
+}
+#game-fullscreen > svg {
+	width: 2vw;
+	height: 2vw;
+	fill: #DAA520;
+	opacity: 0.2;
+	filter: drop-shadow(0px 0px 2px black);
+	transition: opacity 0.3s ease, filter 0.2s ease;
+}
+#game-fullscreen:hover > svg,
+#game-fullscreen:focus-visible > svg {
+	opacity: 1;
+	filter: drop-shadow(0px 0px 3px rgba(255, 255, 255, 0.5));
+}
+#game-fullscreen:focus-visible {
+	outline: none;
+}
+#game-fullscreen .fs-exit,
+#game-fullscreen.active .fs-enter {
+	display: none;
+}
+#game-fullscreen.active .fs-exit {
+	display: inline;
+}
+/* The deck customization menu has its own text link (#toggle-fullscreen) */
+#game-fullscreen.deck-menu {
+	display: none !important;
+}
+#game-fullscreen[data-title]:hover::after {
 	left: 2.6vw;
 	bottom: auto;
 	top: 0.45vw;

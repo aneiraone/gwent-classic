@@ -91,3 +91,24 @@ function toInteger(str)
 function randomInt(n)  {
 	return Math.floor(Math.random() * n);
 }
+
+/* The layout is drawn for a 16:9 screen in vw units, so it is always 100vw * 9/16 tall.
+ * On wider screens (phones in landscape, ~19.5:9) that is taller than the viewport and
+ * the bottom of the board is cut off. Shrink the whole page until it fits the height,
+ * centered horizontally. A transform does not change layout, so the offset*-based
+ * card animations keep working unchanged. */
+function fitToViewport()
+{
+	const vw = window.innerWidth;
+	const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+	const scale = Math.min(1, vh / (vw * 1080 / 1920));
+	const fit = scale < 0.999;
+	document.documentElement.classList.toggle("fit-height", fit);
+	document.body.style.transform = fit ? "scale(" + scale + ")" : "";
+}
+fitToViewport();
+window.addEventListener("resize", fitToViewport);
+window.addEventListener("orientationchange", () => setTimeout(fitToViewport, 200));
+document.addEventListener("fullscreenchange", fitToViewport);
+if (window.visualViewport)
+	window.visualViewport.addEventListener("resize", fitToViewport);

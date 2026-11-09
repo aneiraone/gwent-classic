@@ -1967,21 +1967,40 @@ var Fullscreen = {
 		return this.isActive() ? this.exit() : this.enter();
 	},
 
-	// Enters fullscreen on the first interaction and keeps the toggle button text in sync
-	init(button) {
+	// Enters fullscreen on the first interaction and keeps the toggle buttons in sync:
+	// `button` is the text link of the deck menu, `gameButton` the icon shown during a game
+	init(button, gameButton) {
+		const buttons = [button, gameButton].filter(b => b);
 		const enterOnInteraction = e => {
-			// Let the toggle button handle its own click
-			if (button && button.contains(e.target))
+			// Let the toggle buttons handle their own click
+			if (buttons.some(b => b.contains(e.target)))
 				return;
 			["click", "touchend", "keydown"].forEach(t => window.removeEventListener(t, enterOnInteraction, true));
 			this.enter();
 		};
 		["click", "touchend", "keydown"].forEach(t => window.addEventListener(t, enterOnInteraction, true));
 
-		if (!button)
-			return;
-		const update = () => I18n.setText(button, this.isActive() ? "exitFullscreen" : "enterFullscreen");
-		button.addEventListener("click", () => this.toggle(), false);
+		buttons.forEach(b => b.addEventListener("click", () => this.toggle(), false));
+		if (gameButton)
+			gameButton.addEventListener("keydown", e => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					this.toggle();
+				}
+			});
+
+		const update = () => {
+			const active = this.isActive();
+			const key = active ? "exitFullscreen" : "enterFullscreen";
+			if (button)
+				I18n.setText(button, key);
+			if (gameButton) {
+				gameButton.classList.toggle("active", active);
+				I18n.setTitle(gameButton, key);
+				gameButton.dataset.i18nAria = key;
+				gameButton.setAttribute("aria-label", I18n.ui(key));
+			}
+		};
 		document.addEventListener("fullscreenchange", update);
 		document.addEventListener("webkitfullscreenchange", update);
 		update();
@@ -2005,8 +2024,10 @@ class UI {
 		// Gear that opens the settings window (settings.js): top-left corner of
 		// the deck menu, and next to the exit button during a game
 		this.toggleSettings.push(document.getElementById("open-settings"));
+		const gameFullscreen = document.getElementById("game-fullscreen");
+		this.toggleSettings.push(gameFullscreen);
 		I18n.applyToDOM();
-		Fullscreen.init(document.getElementById("toggle-fullscreen"));
+		Fullscreen.init(document.getElementById("toggle-fullscreen"), gameFullscreen);
 
 		EventManager.gameOpened.bind(()=>this.toggleSettings.forEach(e=>e.classList.remove('deck-menu')));
 		EventManager.customizationOpened.bind(()=>this.toggleSettings.forEach(e=>e.classList.add('deck-menu')));
@@ -2861,7 +2882,7 @@ class DeckMaker {
 		player_me = new Player(0, I18n.ui("player1"), me_deck);
 		player_op = new Player(1, I18n.ui("player2"), op_deck);
 		
-		// Fullscreen can only be left in deck customization: games always run in fullscreen
+		// Games start in fullscreen; it can be toggled in game from the button next to the gear
 		Fullscreen.enter();
 		this.elem.classList.add("hide");
 		game.startGame();

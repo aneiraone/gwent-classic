@@ -314,6 +314,11 @@
 	</section>
 </div>
 <div data-i18n-title="settings" id="open-settings" class="center deck-menu settings-button" role="button" tabindex="0" data-i18n-aria="settings"><img src="svg/settings.svg"></img></div>
+<!-- In-game fullscreen toggle, next to the gear (the deck menu uses #toggle-fullscreen) -->
+<div id="game-fullscreen" class="center deck-menu settings-button" role="button" tabindex="0" data-i18n-title="enterFullscreen" data-i18n-aria="enterFullscreen">
+	<svg class="fs-enter" viewBox="0 0 24 24"><path d="M3 3h6v2H5v4H3zm12 0h6v6h-2V5h-4zM3 15h2v4h4v2H3zm16 0h2v6h-6v-2h4z"/></svg>
+	<svg class="fs-exit" viewBox="0 0 24 24"><path d="M7 3h2v6H3V7h4zm8 0h2v4h4v2h-6zM3 15h6v6H7v-4H3zm12 0h6v2h-4v4h-2z"/></svg>
+</div>
 
 <!-- Settings window, opened from the gear (deck customization menu and in game) -->
 <section id="settings-modal" class="hide" role="dialog" aria-modal="true" aria-labelledby="settings-title">
