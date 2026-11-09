@@ -10,11 +10,9 @@ var factions = {
 			}
 			return false;
 		}),
-		description: "Draw a card from your deck whenever you win a round."
 	},
 	nilfgaard: {
 		name: "Nilfgaardian Empire",
-		description: "Wins any round that ends in a draw."
 	},
 	monsters: {
 		name: "Monsters",
@@ -32,14 +30,13 @@ var factions = {
 			});
 			return false;
 		}),
-		description: "Keeps a random Unit Card out after each round."
 	},
 	scoiatael: {
 		name: "Scoia'tael",
 		factionAbility: player => game.gameStart.push( async () => {
 			let notif = "";
 			if (player === player_me) {
-				await ui.popup("Go First", () => game.firstPlayer = player, "Let Opponent Start", () => game.firstPlayer = player.opponent(), "Would you like to go first?", "The Scoia'tael faction perk allows you to decide who will get to go first.", 0.55);
+				await ui.popup(I18n.ui("goFirst"), () => game.firstPlayer = player, I18n.ui("letOpponentStart"), () => game.firstPlayer = player.opponent(), I18n.ui("goFirstTitle"), I18n.ui("goFirstDescription"), 0.55);
 				notif = game.firstPlayer.tag + "-first";
 			} else if (player.hand instanceof HandAI) {
 				if (Math.random() < 0.5) {
@@ -55,7 +52,6 @@ var factions = {
 			await ui.notification(notif,1200);
 			return true;
 		}),
-		description: "Decides who takes first turn."
 	},
 	skellige: {
 		name: "Skellige",
@@ -95,6 +91,5 @@ var factions = {
 				await board.toRow(card, player.grave);
 			}
 		},
-		description: "2 random cards from the graveyard are placed on the battlefield at the start of the third round."
 	}
 }

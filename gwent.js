@@ -6,6 +6,9 @@ const DURATION_CARD_PLACEMENT = 1000;
 
 const DUR_FADE_STEP = 10;
 
+// Seconds the Pass button must be held down to pass the round (0 = pass on a single click)
+const PASS_HOLD_SECONDS = 2;
+
 const CLICK_EVENT_SFX = () => AudioManager.playSFX('ui_card');
 
 const addMouseEnterSFXBySelector = selector => {
@@ -626,7 +629,7 @@ class Player {
 		this.elem_leader.children[1].classList.add("hide");
 		this.elem_leader.addEventListener("click", async () => await ui.viewCard(this.leader), false);
 		this.elem_leader.addEventListener('mouseenter', CLICK_EVENT_SFX);
-		this.elem_leader.children[0].setAttribute('data-title', "View leader");
+		I18n.setTitle(this.elem_leader.children[0], "viewLeader");
 	}
 	
 	// Enable access to leader ability and toggles leader visuals to on state
@@ -644,7 +647,7 @@ class Player {
 					AudioManager.playSFX('open');
 					await this.activateLeader();
 		}	), false);
-			this.elem_leader.children[0].setAttribute('data-title', "Play leader");
+			I18n.setTitle(this.elem_leader.children[0], "playLeader");
 		} else {
 			this.elem_leader.addEventListener("click", async () => await ui.viewCard(this.leader), false);
 		}
@@ -1516,7 +1519,7 @@ class Game {
 		await ui.queueCarousel(player_me.hand, 2, async (c, i) => { 
 			AudioManager.playSFX('redraw');
 			await player_me.deck.swap(c, c.cards[i]);
-		}, c => true, false, true, "Choose up to 2 cards to redraw.");
+		}, c => true, false, true, I18n.ui("redrawTitle"));
 		ui.enablePlayer(false);
 	}
 	
@@ -1660,9 +1663,9 @@ class Game {
 	{
 		AudioManager.playSFX('warning');
 		ui.popup(
-			"Resume", ()=>{},
-			"Exit", ()=>this.returnToCustomization(),
-			"Quit curent game?" , "This will return you to the deck customization menu."
+			I18n.ui("resume"), ()=>{},
+			I18n.ui("exit"), ()=>this.returnToCustomization(),
+			I18n.ui("quitTitle"), I18n.ui("quitDescription")
 		); 
 	}
 	
@@ -1682,7 +1685,7 @@ class Game {
 	{
 		this.reset();
 		player_me.reset();
-		player_op = new Player('op', 'Player 2', dm.constructOpponentDeck(false));
+		player_op = new Player('op', I18n.ui("player2"), dm.constructOpponentDeck(false));
 		this.endScreen.classList.add("hide");
 		this.startGame();
 	}
@@ -1741,25 +1744,29 @@ class Card {
 			}
 		}
 		
-		if (this.row === "leader")
-			this.desc_name = "Leader Ability";
-		else if (this.abilities.length > 0)
-			this.desc_name = ability_dict[this.abilities[this.abilities.length-1]].name;
-		else if (this.row==="agile")
-			this.desc_name = "agile";
-		else if (this.hero)
-			this.desc_name = "hero";
-		else
-			this.desc_name = "";
-		
-		this.desc = this.row ==="agile" ? ability_dict["agile"].description : "";
-		for (let i=this.abilities.length-1; i>=0; --i) {
-			this.desc += ability_dict[this.abilities[i]].description;
-		}
-		if (this.hero)
-			this.desc += ability_dict["hero"].description;
-		
 		this.elem = this.createCardElem(this);
+	}
+
+	// Ability title and description, built on demand in the current language
+	get desc_name() {
+		if (this.row === "leader")
+			return I18n.abilityName("leader");
+		if (this.abilities.length > 0)
+			return I18n.abilityName(this.abilities[this.abilities.length-1]);
+		if (this.row === "agile")
+			return I18n.abilityName("agile");
+		if (this.hero)
+			return I18n.abilityName("hero");
+		return "";
+	}
+	
+	get desc() {
+		let desc = this.row === "agile" ? I18n.abilityDescription("agile") : "";
+		for (let i=this.abilities.length-1; i>=0; --i)
+			desc += I18n.abilityDescription(this.abilities[i]);
+		if (this.hero)
+			desc += I18n.abilityDescription("hero");
+		return desc;
 	}
 	
 	// Returns the identifier for this type of card
@@ -1936,17 +1943,13 @@ class UI {
 		this.previewCard = null;
 		this.lastRow = null;
 		this.toggleSettings = [];
-		document.getElementById("pass-button").addEventListener("click", () => {
-			player_me.passRound();
-			AudioManager.playSFX('pass');
-		}, false);
+		this.initPassButton();
 		document.getElementById("click-background").addEventListener("click", () => ui.cancel(), false);
-		this.youtube;
-		this.ytActive;
 		this.toggleMusic_elem = document.getElementById("toggle-music");
 		this.toggleSettings.push(this.toggleMusic_elem);
 		this.toggleMusic_elem.classList.add("fade");
 		this.toggleMusic_elem.addEventListener("click", () => this.toggleMusic(), false);
+		this.initMusic();
 		this.toggleNotifications_elem = document.getElementById("toggle-notifications");
 		this.toggleSettings.push(this.toggleNotifications_elem);
 		this.toggleNotifications_elem.addEventListener("click", () => this.toggleNotifications(), false);
@@ -1957,6 +1960,10 @@ class UI {
 		this.toggleSFX_elem.addEventListener('click', () => this.toggleSFX())
 		if (!Settings.soundEffects.isEnabled())
 			this.toggleSFX_elem.classList.add("fade");
+		this.language_elem = document.getElementById("language-select");
+		this.toggleSettings.push(this.language_elem);
+		I18n.bindSelect(this.language_elem);
+		I18n.applyToDOM();
 
 		EventManager.gameOpened.bind(()=>this.toggleSettings.forEach(e=>e.classList.remove('deck-menu')));
 		EventManager.customizationOpened.bind(()=>this.toggleSettings.forEach(e=>e.classList.add('deck-menu')));
@@ -1976,45 +1983,84 @@ class UI {
 		if (enable) main.remove("noclick"); else main.add("noclick");
 	}
 	
-	// Initializes the youtube background music object
-	initYouTube(){
-		this.youtube = new YT.Player('youtube', {
-			videoId: "UE9fPWy1_o4",
-			playerVars:  { "autoplay" : 1, "controls" : 0, "loop" : 1, "playlist" : "UE9fPWy1_o4", "rel" : 0, "version" : 3, "modestbranding" : 1 },
-			events: { 'onStateChange': initButton }
+	// Initializes the local background music player (audio/track*.mp3)
+	initMusic(){
+		this.musicPlaylist = [];
+		for (let i = 1; i <= 13; i++)
+			this.musicPlaylist.push("audio/track" + i + ".mp3");
+		this.musicTrackIndex = -1;
+		this.music = document.getElementById("bg-music");
+		this.music.volume = 0.5;
+		this.music.addEventListener("ended", () => this.nextTrack());
+		// Skip tracks that fail to load instead of stopping the music
+		this.music.addEventListener("error", () => {
+			if (Settings.music.isEnabled())
+				setTimeout(() => this.nextTrack(), 500);
 		});
-		
-		function initButton(){
-			if (ui.ytActive !== undefined)
+
+		if (Settings.music.isEnabled())
+			this.toggleMusic_elem.classList.remove("fade");
+
+		// Browsers block autoplay until the user interacts with the page
+		const startOnInteraction = () => {
+			window.removeEventListener("click", startOnInteraction, true);
+			window.removeEventListener("touchstart", startOnInteraction, true);
+			window.removeEventListener("keydown", startOnInteraction, true);
+			if (Settings.music.isEnabled() && this.music.paused)
+				this.playMusic();
+		};
+		window.addEventListener("click", startOnInteraction, true);
+		window.addEventListener("touchstart", startOnInteraction, true);
+		window.addEventListener("keydown", startOnInteraction, true);
+
+		// Pause when the tab is hidden, resume when it becomes visible again
+		document.addEventListener("visibilitychange", () => {
+			if (!this.music.src)
 				return;
-			ui.ytActive = true;
-			ui.youtube.playVideo();
-			let timer = setInterval( () => {
-				if (ui.youtube.getPlayerState() !== YT.PlayerState.PLAYING)
-					ui.youtube.playVideo();
-				else {
-					clearInterval(timer);
-					ui.toggleMusic_elem.classList.remove("fade");
-					if (!Settings.music.isEnabled())
-					{
-						setTimeout(()=>ui.toggleMusic(), 10);
-					}
-				}
-			}, 500);
-		}
+			if (document.hidden) {
+				this.musicPausedBySystem = !this.music.paused;
+				this.music.pause();
+			} else if (this.musicPausedBySystem) {
+				this.musicPausedBySystem = false;
+				this.music.play().catch(() => {});
+			}
+		});
 	}
-	
+
+	// Plays a random track different from the current one
+	nextTrack(){
+		const list = this.musicPlaylist;
+		let index = this.musicTrackIndex;
+		if (list.length > 1) {
+			while (index === this.musicTrackIndex)
+				index = Math.floor(Math.random() * list.length);
+		} else {
+			index = 0;
+		}
+		this.musicTrackIndex = index;
+		this.music.src = list[index];
+		this.music.play().catch(() => {});
+	}
+
+	// Resumes the current track, or starts a new one
+	playMusic(){
+		if (!this.music.src)
+			this.nextTrack();
+		else
+			this.music.play().catch(() => {});
+	}
+
 	// Called when client toggles the music
 	toggleMusic(){
-		const isPlaying = this.youtube?.getPlayerState() === YT.PlayerState.PLAYING;
-		if (isPlaying) {
-			this.youtube?.pauseVideo();
-			this.toggleMusic_elem.classList.add("fade");
-		} else {
-			this.youtube?.playVideo();
+		const enable = !Settings.music.isEnabled();
+		if (enable) {
+			this.playMusic();
 			this.toggleMusic_elem.classList.remove("fade");
+		} else {
+			this.music.pause();
+			this.toggleMusic_elem.classList.add("fade");
 		}
-		Settings.music.setEnabled(!isPlaying);
+		Settings.music.setEnabled(enable);
 	}
 
 	toggleNotifications() {
@@ -2042,17 +2088,6 @@ class UI {
 			this.toggleSFX_elem.classList.add("fade");
 		}
 	}
-	
-	// Enables or disables backgorund music 
-	setYouTubeEnabled(enable){
-		if (this.ytActive === enable)
-			return;
-		if (enable && !this.mute)
-			ui.youtube.playVideo();
-		else
-			ui.youtube.pauseVideo();
-		this.ytActive = enable;
-}
 	
 	// Called when the player selects a selectable card
 	async selectCard(card) {
@@ -2185,6 +2220,7 @@ class UI {
 		const fadeSpeed = 150;
 		duration = Math.max(400, duration - 2*fadeSpeed);
 		this.notif_elem.children[0].id = "notif-" + name;
+		this.notif_elem.children[0].dataset.text = I18n.t("notifications", name);
 		await fadeIn(this.notif_elem, fadeSpeed);
 		await sleep(duration);
 		await fadeOut(this.notif_elem, fadeSpeed);
@@ -2199,6 +2235,42 @@ class UI {
 		await this.viewCardsInContainer(container, action);
 	}
 	
+	// Pass button: must be held for PASS_HOLD_SECONDS, showing a countdown on the button
+	initPassButton() {
+		const btn = document.getElementById("pass-button");
+		let timer = null, remaining = 0, originalText = "";
+
+		const doPass = () => {
+			player_me.passRound();
+			AudioManager.playSFX('pass');
+		};
+		const stop = () => {
+			if (timer === null) return;
+			clearInterval(timer);
+			timer = null;
+			btn.innerHTML = originalText;
+		};
+
+		btn.addEventListener("pointerdown", e => {
+			if (e.button !== 0 || timer !== null || btn.classList.contains("noclick")) return;
+			e.preventDefault();
+			if (PASS_HOLD_SECONDS <= 0) return doPass();
+			originalText = btn.innerHTML;
+			remaining = PASS_HOLD_SECONDS;
+			btn.innerHTML = remaining;
+			timer = setInterval(() => {
+				remaining--;
+				if (remaining > 0) {
+					btn.innerHTML = remaining;
+				} else {
+					stop();
+					doPass();
+				}
+			}, 1000);
+		}, false);
+		["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, stop, false));
+	}
+
 	// Displays a cancellable Carousel for all cards in a container
 	async viewCardsInContainer(container, action) {
 		action = action ? action : function() {return this.cancel();};
@@ -2510,8 +2582,8 @@ class Popup {
 		let main = this.elem.children[0];
 		main.children[0].innerHTML = header ? header : "";
 		main.children[1].innerHTML = description ? description : "";
-		main.children[2].children[0].innerHTML = (yesName) ? yesName : "Yes";
-		main.children[2].children[1].innerHTML = (noName) ? noName : "No";
+		main.children[2].children[0].innerHTML = (yesName) ? yesName : I18n.ui("yes");
+		main.children[2].children[1].innerHTML = (noName) ? noName : I18n.ui("no");
 
 		const bgColor = new RGBA(10, 10, 10, alpha);
 		this.elem.style.backgroundColor = bgColor.toString();
@@ -2560,6 +2632,7 @@ class DeckMaker {
 		this.leader_elem.children[1].addEventListener("click", () => this.selectLeader(), false);
 		this.leader_elem.children[1].addEventListener('mouseenter', CLICK_EVENT_SFX);
 		this.loadFactionDeck(Settings.lastFaction.get(), true);
+		I18n.onChange(() => document.getElementById("faction-description").innerHTML = I18n.factionDescription(this.faction));
 
 		this.opponentData = Settings.opponentDeckCustom.get();
 		this.updatedCustomOpponent();
@@ -2608,7 +2681,7 @@ class DeckMaker {
 			return false;
 		this.elem.getElementsByTagName("h1")[0].innerHTML = factions[faction_name].name;
 		this.elem.getElementsByTagName("h1")[0].style.backgroundImage = iconURL("deck_shield_" + faction_name);
-		document.getElementById("faction-description").innerHTML = factions[faction_name].description;
+		document.getElementById("faction-description").innerHTML = I18n.factionDescription(faction_name);
 		
 		this.leaders = 
 			card_dict.map((c,i) => ({index: i, card:c}) )
@@ -2670,8 +2743,20 @@ class DeckMaker {
 		count.innerHTML = bankID.count;
 		cards.push(bankID);
 		let cardIndex = cards.length-1;
-		elem.addEventListener("click", () => this.select(cardIndex, isBank), false);
+		elem.addEventListener("dblclick", () => this.select(cardIndex, isBank), false);
 		elem.addEventListener("mouseenter", CLICK_EVENT_SFX, false);
+		// Right click: show the card's description/ability in the carousel
+		elem.addEventListener("contextmenu", e => {
+			e.preventDefault();
+			e.stopPropagation();
+			if (Carousel.curr) {
+				if (Carousel.curr.bExit) Carousel.curr.cancel();
+				return;
+			}
+			let container = new CardContainer();
+			container.cards = [new Card(card_data, player_me)];
+			ui.viewCardsInContainer(container);
+		}, false);
 		return bankID;
 	}
 	
@@ -2764,7 +2849,7 @@ class DeckMaker {
 	selectFaction() {
 		let container = new CardContainer();
 		container.cards = Object.keys(factions).map( f => {
-			return {abilities: [f], filename: f, desc_name: factions[f].name, desc: factions[f].description, faction: "faction"};
+			return {abilities: [f], filename: f, desc_name: factions[f].name, desc: I18n.factionDescription(f), faction: "faction"};
 		});
 		let index = container.cards.reduce((a,c,i) => c.filename === this.faction ? i : a, 0);
 		ui.queueCarousel(container, 1, (c,i) => {
@@ -2819,9 +2904,9 @@ class DeckMaker {
 	startNewGame(){
 		let warning = "";
 		if (this.stats.units < 22)
-			warning += "Your deck must have at least 22 unit cards. \n";
+			warning += I18n.ui("deckMinUnits") + "\n";
 		if (this.stats.special > 10)
-			warning += "Your deck must have no more than 10 special cards. \n";
+			warning += I18n.ui("deckMaxSpecial") + "\n";
 		if (warning != "")
 		{
 			AudioManager.playSFX("warning");
@@ -2835,8 +2920,8 @@ class DeckMaker {
 		};
 		const op_deck = this.constructOpponentDeck(true);
 		
-		player_me = new Player(0, "Player 1", me_deck);
-		player_op = new Player(1, "Player 2", op_deck);
+		player_me = new Player(0, I18n.ui("player1"), me_deck);
+		player_op = new Player(1, I18n.ui("player2"), op_deck);
 		
 		this.elem.classList.add("hide");
 		game.startGame();
@@ -2895,7 +2980,7 @@ class DeckMaker {
 					callback(deck);
 				
 			} catch (e) {
-				alert("Uploaded deck is not formatted correctly!");
+				alert(I18n.ui("deckBadFormat"));
 			}
 			finally
 			{
@@ -2924,7 +3009,7 @@ class DeckMaker {
 			return deck;
 		} catch (e) {
 			AudioManager.playSFX('warning');
-			alert("Uploaded deck is not parsable!");
+			alert(I18n.ui("deckNotParsable"));
 			return;
 		}
 	}
@@ -2936,22 +3021,22 @@ class DeckMaker {
 		let warning = "";
 		// verify that leader card is actually a leader and that it's faction matches the deck faction
 		if (card_dict[deck.leader].row !== "leader")
-			warning += "'" + card_dict[deck.leader].name + "' is cannot be used as a leader\n";
+			warning += I18n.ui("deckInvalidLeader", {name: card_dict[deck.leader].name}) + "\n";
 		if (deck.faction != card_dict[deck.leader].deck)
-			warning += "Leader '" + card_dict[deck.leader].name + "' doesn't match deck faction '" + deck.faction + "'.\n";
+			warning += I18n.ui("deckLeaderFaction", {name: card_dict[deck.leader].name, faction: deck.faction}) + "\n";
 		// check if cards exist and have correct faction & count
 		const cards = deck.cards.filter( c => {
 			const card = card_dict[c[0]];
 			if (!card) {
-				warning += "ID " + c[0] + " does not correspond to a card.\n";
+				warning += I18n.ui("deckInvalidId", {id: c[0]}) + "\n";
 				return false
 			}
 			if (![deck.faction, "neutral", "special", "weather"].includes(card.deck)) {
-				warning += "'" + card.name + "' cannot be used in a deck of faction type '" + deck.faction +"'\n";
+				warning += I18n.ui("deckCardFaction", {name: card.name, faction: deck.faction}) + "\n";
 				return false;
 			}
 			if (card.count < c[1]) {
-				warning += "Deck contains " + c[1] + "/" + card.count + " available " + card_dict[c.index].name + " cards\n";
+				warning += I18n.ui("deckCardCount", {count: c[1], max: card.count, name: card.name}) + "\n";
 				c[1] = card.count;
 				return true;
 			}
@@ -3014,12 +3099,13 @@ class DeckMaker {
 		const buttons = ['op-preview-clear', 'op-preview-open'].map(id=>document.getElementById(id));
 		if (isEmpty(this.opponentData))
 		{
-			leaderElem.children[1].innerHTML = "Random";
+			I18n.setText(leaderElem.children[1], "random");
 			[factionElem, ...buttons].forEach(e=>e.classList.add('hide'));
 		}
 		else
 		{
 			factionElem.style.setProperty('background-image', iconURL('deck_shield_' + this.opponentData.faction));
+			delete leaderElem.children[1].dataset.i18n;
 			leaderElem.children[1].innerHTML = card_dict[this.opponentData.leader].name;
 			[factionElem, ...buttons].forEach(e=>e.classList.remove('hide'));
 		}
@@ -3034,7 +3120,7 @@ class DeckMaker {
 		const container = new CardContainer();
 		//container.cards = [leader, ...Card.this.opponentData.cards];
 		container.cards = Card.getCardsFromIdCounts([leader, ...this.opponentData.cards]);
-		ui.queueCarousel(container, 1, ()=>{}, ()=>true, false, true, "Oponent's deck");
+		ui.queueCarousel(container, 1, ()=>{}, ()=>true, false, true, I18n.ui("opponentDeck"));
 	}
 }
 
@@ -3515,11 +3601,6 @@ function sleepUntil(predicate, ms) {
 	});
 }
 
-// Initializes the interractive YouTube object
-function onYouTubeIframeAPIReady() {
-	ui.initYouTube();
-}
-
 /*----------------------------------------------------*/
 
 
@@ -3537,3 +3618,10 @@ let dm = new DeckMaker();
 
 
 document.addEventListener('click', () => userInteracted = true, { once: true });
+
+// Right click never opens the browser menu; if a closable carousel is open, it closes it
+document.addEventListener('contextmenu', e => {
+	e.preventDefault();
+	if (Carousel.curr && Carousel.curr.bExit)
+		Carousel.curr.cancel();
+});
