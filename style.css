@@ -27,8 +27,8 @@ body {
 body {
 	transform-origin: top center;
 }
-html.fit-height,
-html.fit-height body {
+/* Only on html: on body it would clip the board at its unscaled height before scaling */
+html.fit-height {
 	overflow: hidden;
 }
 
