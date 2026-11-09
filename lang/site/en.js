@@ -13,8 +13,32 @@ I18n.register("en", {
 
 		// Settings buttons
 		toggleMusic: "Toggle music",
-		toggleSfx: "Toggle sound effects",
-		toggleNotifications: "Toggle game messages",
+		musicPlay: "Play",
+		musicPause: "Pause",
+		musicMute: "Mute",
+		musicUnmute: "Unmute",
+		musicVolume: "Volume",
+		musicPrev: "Previous track",
+		musicNext: "Next track",
+		musicList: "Track list",
+		exitFullscreen: "Exit fullscreen",
+		enterFullscreen: "Fullscreen",
+
+		// Settings window (deck customization menu)
+		settings: "Settings",
+		close: "Close",
+		tabGame: "Game",
+		tabAudio: "Audio",
+		gameMessages: "Game messages",
+		gameMessagesHint: "Show notices such as turn changes and round results.",
+		displayFullscreen: "Fullscreen",
+		displayFullscreenHint: "Use the whole screen to play.",
+		musicLabel: "Music",
+		musicHint: "Background music volume.",
+		sfxLabel: "Sound effects",
+		sfxHint: "Volume of cards, abilities and menus.",
+		sfxVolume: "Sound effects volume",
+		languageHint: "Interface and ability texts. Card and character names stay in English.",
 
 		// Board
 		exitGame: "Exit game",

@@ -1933,6 +1933,61 @@ class Card {
 	}
 }
 
+// Fullscreen handling. Browsers only allow entering fullscreen from a user
+// gesture, so it is requested on the first interaction and when a game starts.
+var Fullscreen = {
+	isActive() {
+		return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+	},
+
+	async enter() {
+		if (this.isActive())
+			return;
+		const elem = document.documentElement;
+		try {
+			if (elem.requestFullscreen) await elem.requestFullscreen();
+			else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+			else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+			if (screen.orientation && screen.orientation.lock)
+				await screen.orientation.lock("landscape");
+		} catch (e) {}
+	},
+
+	async exit() {
+		if (!this.isActive())
+			return;
+		try {
+			if (document.exitFullscreen) await document.exitFullscreen();
+			else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+			else if (document.msExitFullscreen) document.msExitFullscreen();
+		} catch (e) {}
+	},
+
+	toggle() {
+		return this.isActive() ? this.exit() : this.enter();
+	},
+
+	// Enters fullscreen on the first interaction and keeps the toggle button text in sync
+	init(button) {
+		const enterOnInteraction = e => {
+			// Let the toggle button handle its own click
+			if (button && button.contains(e.target))
+				return;
+			["click", "touchend", "keydown"].forEach(t => window.removeEventListener(t, enterOnInteraction, true));
+			this.enter();
+		};
+		["click", "touchend", "keydown"].forEach(t => window.addEventListener(t, enterOnInteraction, true));
+
+		if (!button)
+			return;
+		const update = () => I18n.setText(button, this.isActive() ? "exitFullscreen" : "enterFullscreen");
+		button.addEventListener("click", () => this.toggle(), false);
+		document.addEventListener("fullscreenchange", update);
+		document.addEventListener("webkitfullscreenchange", update);
+		update();
+	}
+};
+
 // Handles notifications and client interration with menus
 class UI {
 	constructor() {
@@ -1947,29 +2002,18 @@ class UI {
 		document.getElementById("click-background").addEventListener("click", () => ui.cancel(), false);
 		this.toggleMusic_elem = document.getElementById("toggle-music");
 		this.toggleSettings.push(this.toggleMusic_elem);
-		this.toggleMusic_elem.classList.add("fade");
-		this.toggleMusic_elem.addEventListener("click", () => this.toggleMusic(), false);
-		this.initMusic();
-		this.toggleNotifications_elem = document.getElementById("toggle-notifications");
-		this.toggleSettings.push(this.toggleNotifications_elem);
-		this.toggleNotifications_elem.addEventListener("click", () => this.toggleNotifications(), false);
-		if (!Settings.notifications.isEnabled())
-			this.toggleNotifications_elem.classList.add("fade");
-		this.toggleSFX_elem = document.getElementById("toggle-sfx");
-		this.toggleSettings.push(this.toggleSFX_elem);
-		this.toggleSFX_elem.addEventListener('click', () => this.toggleSFX())
-		if (!Settings.soundEffects.isEnabled())
-			this.toggleSFX_elem.classList.add("fade");
-		this.language_elem = document.getElementById("language-select");
-		this.toggleSettings.push(this.language_elem);
-		I18n.bindSelect(this.language_elem);
+		// Gear that opens the settings window (settings.js): top-left corner of
+		// the deck menu, and next to the exit button during a game
+		this.toggleSettings.push(document.getElementById("open-settings"));
 		I18n.applyToDOM();
+		Fullscreen.init(document.getElementById("toggle-fullscreen"));
 
 		EventManager.gameOpened.bind(()=>this.toggleSettings.forEach(e=>e.classList.remove('deck-menu')));
 		EventManager.customizationOpened.bind(()=>this.toggleSettings.forEach(e=>e.classList.add('deck-menu')));
 
 		[	'.settings-button',
 			'.deck-options',
+			'#toggle-fullscreen',
 			'#pass-button',
 			'#end-screen>button',
 			'#op-preview-leader',
@@ -1981,112 +2025,6 @@ class UI {
 	enablePlayer(enable){
 		let main = document.getElementsByTagName("main")[0].classList;
 		if (enable) main.remove("noclick"); else main.add("noclick");
-	}
-	
-	// Initializes the local background music player (audio/track*.mp3)
-	initMusic(){
-		this.musicPlaylist = [];
-		for (let i = 1; i <= 13; i++)
-			this.musicPlaylist.push("audio/track" + i + ".mp3");
-		this.musicTrackIndex = -1;
-		this.music = document.getElementById("bg-music");
-		this.music.volume = 0.5;
-		this.music.addEventListener("ended", () => this.nextTrack());
-		// Skip tracks that fail to load instead of stopping the music
-		this.music.addEventListener("error", () => {
-			if (Settings.music.isEnabled())
-				setTimeout(() => this.nextTrack(), 500);
-		});
-
-		if (Settings.music.isEnabled())
-			this.toggleMusic_elem.classList.remove("fade");
-
-		// Browsers block autoplay until the user interacts with the page
-		const startOnInteraction = () => {
-			window.removeEventListener("click", startOnInteraction, true);
-			window.removeEventListener("touchstart", startOnInteraction, true);
-			window.removeEventListener("keydown", startOnInteraction, true);
-			if (Settings.music.isEnabled() && this.music.paused)
-				this.playMusic();
-		};
-		window.addEventListener("click", startOnInteraction, true);
-		window.addEventListener("touchstart", startOnInteraction, true);
-		window.addEventListener("keydown", startOnInteraction, true);
-
-		// Pause when the tab is hidden, resume when it becomes visible again
-		document.addEventListener("visibilitychange", () => {
-			if (!this.music.src)
-				return;
-			if (document.hidden) {
-				this.musicPausedBySystem = !this.music.paused;
-				this.music.pause();
-			} else if (this.musicPausedBySystem) {
-				this.musicPausedBySystem = false;
-				this.music.play().catch(() => {});
-			}
-		});
-	}
-
-	// Plays a random track different from the current one
-	nextTrack(){
-		const list = this.musicPlaylist;
-		let index = this.musicTrackIndex;
-		if (list.length > 1) {
-			while (index === this.musicTrackIndex)
-				index = Math.floor(Math.random() * list.length);
-		} else {
-			index = 0;
-		}
-		this.musicTrackIndex = index;
-		this.music.src = list[index];
-		this.music.play().catch(() => {});
-	}
-
-	// Resumes the current track, or starts a new one
-	playMusic(){
-		if (!this.music.src)
-			this.nextTrack();
-		else
-			this.music.play().catch(() => {});
-	}
-
-	// Called when client toggles the music
-	toggleMusic(){
-		const enable = !Settings.music.isEnabled();
-		if (enable) {
-			this.playMusic();
-			this.toggleMusic_elem.classList.remove("fade");
-		} else {
-			this.music.pause();
-			this.toggleMusic_elem.classList.add("fade");
-		}
-		Settings.music.setEnabled(enable);
-	}
-
-	toggleNotifications() {
-		Settings.notifications.toggle();
-		const useNotificaitons = Settings.notifications.isEnabled();
-		if (useNotificaitons)
-		{
-			this.toggleNotifications_elem.classList.remove("fade");
-		}
-		else
-		{
-			this.toggleNotifications_elem.classList.add("fade");
-		}
-	}
-
-	toggleSFX() {
-		Settings.soundEffects.toggle();
-		const useSFX = Settings.soundEffects.isEnabled();
-		if (useSFX)
-		{
-			this.toggleSFX_elem.classList.remove("fade");
-		}
-		else
-		{
-			this.toggleSFX_elem.classList.add("fade");
-		}
 	}
 	
 	// Called when the player selects a selectable card
@@ -2923,6 +2861,8 @@ class DeckMaker {
 		player_me = new Player(0, I18n.ui("player1"), me_deck);
 		player_op = new Player(1, I18n.ui("player2"), op_deck);
 		
+		// Fullscreen can only be left in deck customization: games always run in fullscreen
+		Fullscreen.enter();
 		this.elem.classList.add("hide");
 		game.startGame();
 	}
@@ -3157,7 +3097,7 @@ class AudioManager
 					return await asyncAudio(audio);
 				else
 				{
-					audio.play();
+					applySfxVolume(audio).play();
 					return await sleep(waitTime);
 				}
 			}
@@ -3331,6 +3271,7 @@ class Settings
 	static music = new ToggleOption("gc-music", true);
 	static notifications = new ToggleOption("gc-notifications", true);
 	static soundEffects = new ToggleOption("gc-sound-effects", true);
+	static sfxVolume = new SavedString("gc-sfx-volume", "100");
 	static lastFaction = new SavedString("gc-last-faction", "realms"); 
 	static realmsDeck = new SavedDeck("gc-deck-realms", premade_deck[0]);
 	static nilfgaardDeck = new SavedDeck("gc-deck-nilfgaard", premade_deck[2]);
@@ -3339,6 +3280,13 @@ class Settings
 	static skelligesDeck = new SavedDeck("gc-deck-skellige", premade_deck[8]);
 	static opponentDeckCustom = new SavedDeck("gc-deck-opponent-custom");
 	
+	// Sound effect volume, 0-100
+	static getSfxVolume()
+	{
+		const v = parseInt(Settings.sfxVolume.get(), 10);
+		return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 100;
+	}
+
 	static getFactionSettings(factionName)
 	{
 		switch(factionName) {
@@ -3573,12 +3521,19 @@ async function playAudio(name, ext = "mp3")
 	return await asyncAudio(getAudio(name, ext));
 }
 
+// Sets a sound effect to the volume chosen in the settings window
+function applySfxVolume(audio)
+{
+	audio.volume = Settings.getSfxVolume() / 100;
+	return audio;
+}
+
 function asyncAudio(audio)
 {
 	if (!userInteracted || !audio)
 		return
 	return new Promise(r => {
-		audio.play();
+		applySfxVolume(audio).play();
 		audio.onended = r;
 	});
 }

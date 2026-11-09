@@ -94,17 +94,27 @@ var I18n = {
 		root.querySelectorAll("[data-i18n-aria]").forEach(e => e.setAttribute("aria-label", this.ui(e.dataset.i18nAria)));
 	},
 
-	// Fills a <select> with the registered languages and keeps it in sync.
-	bindSelect(select) {
-		select.innerHTML = "";
-		for (const code of Object.keys(this.languages)) {
-			const option = document.createElement("option");
-			option.value = code;
-			option.textContent = this.languages[code].name || code;
-			select.appendChild(option);
-		}
-		select.value = this.getLanguage();
-		select.addEventListener("change", () => this.setLanguage(select.value));
-		this.onChange(code => select.value = code);
+	// Fills the language switch (#lang-switch) with one option per
+	// registered language (shown by its own name) and keeps it in sync.
+	bindSwitch(root) {
+		root.innerHTML = "";
+		const buttons = Object.keys(this.languages).map(code => {
+			const btn = document.createElement("button");
+			btn.type = "button";
+			btn.setAttribute("role", "radio");
+			btn.dataset.value = code;
+			const name = document.createElement("span");
+			name.textContent = this.languages[code].name || code;
+			const tag = document.createElement("small");
+			tag.textContent = code.toUpperCase();
+			btn.append(name, tag);
+			btn.addEventListener("click", () => this.setLanguage(code));
+			root.appendChild(btn);
+			return btn;
+		});
+		const sync = code => buttons.forEach(b =>
+			b.setAttribute("aria-checked", b.dataset.value === code ? "true" : "false"));
+		sync(this.getLanguage());
+		this.onChange(sync);
 	}
 };

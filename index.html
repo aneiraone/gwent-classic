@@ -238,6 +238,8 @@
 		<h1></h1>
 	</div>
 	<p id="faction-description"></p>
+
+	<a id="toggle-fullscreen" data-i18n="exitFullscreen"></a>
 	
 	<label id="upload-deck" class="deck-options">
 		<input type="file" id="add-file" value="Import" style="display:none;"/>
@@ -288,10 +290,77 @@
 	</div>
 </section>
 
-<div data-i18n-title="toggleMusic" id="toggle-music" class="center deck-menu settings-button"><img src="svg/music.svg"></img></div>
-<div data-i18n-title="toggleSfx" id="toggle-sfx" class="center deck-menu settings-button"><img src="svg/sfx.svg"></img></div>
-<div data-i18n-title="toggleNotifications" id="toggle-notifications" class="center deck-menu settings-button"><img src="svg/notification.svg"></img></div>
-<select id="language-select" class="deck-menu" data-i18n-aria="language"></select>
+<div data-i18n-title="toggleMusic" id="toggle-music" class="center deck-menu settings-button"><img src="svg/music.svg"></img>
+	<section id="music-panel">
+		<div class="music-bar">
+			<button type="button" tabindex="-1" class="music-btn music-prev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+			<button type="button" tabindex="-1" class="music-btn music-play">
+				<svg class="music-icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+				<svg class="music-icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+			</button>
+			<button type="button" tabindex="-1" class="music-btn music-next"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+			<div class="music-now-info">
+				<b class="music-now-title"></b>
+				<small class="music-now-time"></small>
+				<div class="music-progress"><div class="music-progress-fill"></div></div>
+			</div>
+			<button type="button" tabindex="-1" class="music-btn music-mute">
+				<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z"/><path class="music-wave-1" d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/><path class="music-wave-2" d="M14 3.23v2.06c2.890.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/><path class="music-muted-x" d="M15 9l6 6m0-6l-6 6"/></svg>
+			</button>
+			<input type="range" class="music-volume" min="0" max="100" step="5">
+			<button type="button" tabindex="-1" class="music-btn music-list-toggle"><svg viewBox="0 0 24 24"><path d="M3 6h13v2H3zm0 5h13v2H3zm0 5h9v2H3zm15-3.5V6h4v2h-2v8.5a2.5 2.5 0 1 1-2-2.45z"/></svg></button>
+		</div>
+		<ol class="music-tracks"></ol>
+	</section>
+</div>
+<div data-i18n-title="settings" id="open-settings" class="center deck-menu settings-button" role="button" tabindex="0" data-i18n-aria="settings"><img src="svg/settings.svg"></img></div>
+
+<!-- Settings window, opened from the gear (deck customization menu and in game) -->
+<section id="settings-modal" class="hide" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+	<div class="settings-window">
+		<header class="settings-header">
+			<h2 id="settings-title" data-i18n="settings"></h2>
+			<button type="button" class="settings-close" data-i18n-aria="close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+		</header>
+		<nav class="settings-tabs" role="tablist">
+			<button type="button" role="tab" data-tab="game" data-i18n="tabGame"></button>
+			<button type="button" role="tab" data-tab="audio" data-i18n="tabAudio"></button>
+			<button type="button" role="tab" data-tab="language" data-i18n="language"></button>
+		</nav>
+		<div class="settings-body">
+			<section role="tabpanel" data-tab="game">
+				<div class="settings-row">
+					<div class="settings-label"><span data-i18n="gameMessages"></span><small data-i18n="gameMessagesHint"></small></div>
+					<label class="settings-switch"><input type="checkbox" id="setting-notifications" data-i18n-aria="gameMessages"><span></span></label>
+				</div>
+				<div class="settings-row">
+					<div class="settings-label"><span data-i18n="displayFullscreen"></span><small data-i18n="displayFullscreenHint"></small></div>
+					<label class="settings-switch"><input type="checkbox" id="setting-fullscreen" data-i18n-aria="displayFullscreen"><span></span></label>
+				</div>
+			</section>
+			<section role="tabpanel" data-tab="audio">
+				<div class="settings-row settings-row-audio">
+					<div class="settings-label"><span data-i18n="musicLabel"></span><small data-i18n="musicHint"></small></div>
+					<label class="settings-switch"><input type="checkbox" id="setting-music" data-i18n-aria="musicLabel"><span></span></label>
+					<input type="range" class="settings-slider" id="setting-music-volume" min="0" max="100" step="5" data-i18n-aria="musicVolume">
+					<output id="setting-music-value"></output>
+				</div>
+				<div class="settings-row settings-row-audio">
+					<div class="settings-label"><span data-i18n="sfxLabel"></span><small data-i18n="sfxHint"></small></div>
+					<label class="settings-switch"><input type="checkbox" id="setting-sfx" data-i18n-aria="sfxLabel"><span></span></label>
+					<input type="range" class="settings-slider" id="setting-sfx-volume" min="0" max="100" step="5" data-i18n-aria="sfxVolume">
+					<output id="setting-sfx-value"></output>
+				</div>
+			</section>
+			<section role="tabpanel" data-tab="language">
+				<div class="settings-row settings-row-top">
+					<div class="settings-label"><span data-i18n="language"></span><small data-i18n="languageHint"></small></div>
+					<div id="lang-switch" class="settings-options" role="radiogroup" data-i18n-aria="language"></div>
+				</div>
+			</section>
+		</div>
+	</div>
+</section>
 
 <script type="text/javascript" src="common.js"></script>
 <script type="text/javascript" src="cards.js"></script>
@@ -304,6 +373,8 @@
 <script type="text/javascript" src="abilities.js"></script>
 <script type="text/javascript" src="factions.js"></script>
 <script type="text/javascript" src="gwent.js"></script>
+<script type="text/javascript" src="music.js"></script>
+<script type="text/javascript" src="settings.js"></script>
 </body>
 
 </html>

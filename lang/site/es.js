@@ -13,8 +13,32 @@ I18n.register("es", {
 
 		// Settings buttons
 		toggleMusic: "Activar/desactivar música",
-		toggleSfx: "Activar/desactivar efectos de sonido",
-		toggleNotifications: "Activar/desactivar mensajes del juego",
+		musicPlay: "Reproducir",
+		musicPause: "Pausa",
+		musicMute: "Silenciar",
+		musicUnmute: "Activar sonido",
+		musicVolume: "Volumen",
+		musicPrev: "Pista anterior",
+		musicNext: "Pista siguiente",
+		musicList: "Lista de pistas",
+		exitFullscreen: "Salir de pantalla completa",
+		enterFullscreen: "Pantalla completa",
+
+		// Settings window (deck customization menu)
+		settings: "Configuración",
+		close: "Cerrar",
+		tabGame: "Juego",
+		tabAudio: "Audio",
+		gameMessages: "Mensajes del juego",
+		gameMessagesHint: "Muestra avisos como el cambio de turno y el resultado de cada ronda.",
+		displayFullscreen: "Pantalla completa",
+		displayFullscreenHint: "Usa toda la pantalla para jugar.",
+		musicLabel: "Música",
+		musicHint: "Volumen de la música de fondo.",
+		sfxLabel: "Efectos de sonido",
+		sfxHint: "Volumen de cartas, habilidades y menús.",
+		sfxVolume: "Volumen de los efectos de sonido",
+		languageHint: "Textos de la interfaz y de las habilidades. Los nombres de cartas y personajes se mantienen en inglés.",
 
 		// Board
 		exitGame: "Salir de la partida",

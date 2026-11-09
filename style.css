@@ -89,6 +89,8 @@ html {
 	background-size: contain;
 	opacity: 20%;
 	transition: opacity 0.3s;
+	/* Above the opponent's leader card, which comes later in the DOM and would cover the tooltip */
+	z-index: 10;
 }
 #exit-game:hover {
 	filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.5));
@@ -131,53 +133,51 @@ html {
     top: 48.9vw;
     left: 14vw;
 }
-#toggle-music.deck-menu { 
-	top: 45.3vw;
-	left: 46.7vw;
-	z-index: 86;
-}
-
-#toggle-sfx {
-	top: 48.9vw;
-    left: 17.2vw;
-}
-#toggle-sfx.deck-menu {
-	top: 45.3vw;
-	left: 50.1vw;
-	z-index: 86;
-}
-
-#toggle-notifications {
-	top: 48.9vw;
-    left: 20vw;
-}
-#toggle-notifications.deck-menu {
+/* In the deck customization menu the music button gives way to the settings window */
+#toggle-music.deck-menu {
 	display: none !important;
 }
 
-#language-select {
-	position: absolute;
-	top: 51.8vw;
-	left: 14vw;
-	width: 5.7vw;
-	height: 2.1vw;
-	padding: 0 0.4vw;
-	font-family: Arial Narrow, sans-serif;
-	font-size: 1vw;
-	color: #d8c8a0;
-	background-color: rgba(0, 0, 0, 0.7);
-	border: 1px solid #6b5a3a;
-	border-radius: 0.3vw;
+/* Gear: next to the exit button during a game, dimmed like it */
+#open-settings {
+	top: 1.4vw;
+	left: 3.6vw;
+	width: 2vw;
+	height: 2vw;
 }
-#language-select.deck-menu {
-	top: 45.5vw;
-	left: 53.5vw;
-	width: auto;
+#open-settings > img {
+	width: 2vw;
+	height: 2vw;
+	opacity: 0.2;
+	transition: transform 0.4s ease, opacity 0.3s ease, filter 0.2s ease;
+}
+#open-settings:hover > img {
+	opacity: 1;
+}
+/* Top-left corner of the deck customization menu */
+#open-settings.deck-menu {
+	top: 1vw;
+	left: 1.5vw;
+	width: 2.5vw;
+	height: 2.5vw;
 	z-index: 86;
 }
-#language-select option {
-	background-color: #1a1a1a;
-	color: #d8c8a0;
+#open-settings.deck-menu > img {
+	width: 2.5vw;
+	height: 2.5vw;
+	opacity: 1;
+}
+#open-settings:hover > img,
+#open-settings:focus-visible > img {
+	transform: rotate(60deg);
+}
+#open-settings:focus-visible {
+	outline: none;
+}
+#open-settings[data-title]:hover::after {
+	left: 2.6vw;
+	bottom: auto;
+	top: 0.45vw;
 }
 
 #pass-button[data-title]:hover::after
@@ -1209,6 +1209,23 @@ main { background-image: url('img/boardtest8.png'); }
 	left: 55%;
 }
 
+/* Only exists inside deck customization, so it is hidden during games */
+#toggle-fullscreen {
+	position: absolute;
+	top: 1.4vw;
+	right: 1.5vw;
+	font-size: 0.9vw;
+	color: #d8c8a0;
+	cursor: pointer;
+	white-space: nowrap;
+	opacity: 0.6;
+	transition: opacity 0.3s;
+}
+#toggle-fullscreen:hover {
+	opacity: 1;
+	text-decoration: underline;
+}
+
 #upload-deck {
 	left: 40%;
 }
@@ -1335,7 +1352,7 @@ main { background-image: url('img/boardtest8.png'); }
 
 #start-game {
 	position: absolute;
-	top: 86%;
+	top: 81.5%;
 	/* centered on the old position; grows with the text length */
 	left: 49.65%;
 	transform: translateX(-50%);
@@ -1585,4 +1602,562 @@ main { background-image: url('img/boardtest8.png'); }
 
 .noclick {
 	pointer-events: none;
+}
+
+/* ---------- music bar (music.js) ---------- */
+
+#toggle-music.open {
+	z-index: 1002;
+}
+#toggle-music.open > img {
+	filter: drop-shadow(0 0 4px rgba(255, 200, 90, 0.7));
+}
+#toggle-music.open[data-title]:hover::after {
+	display: none;
+}
+
+/* A slim strip that slides out above the music note */
+#music-panel {
+	display: none;
+	position: absolute;
+	bottom: calc(100% + 0.5vw);
+	left: 0;
+	font-family: Arial Narrow, sans-serif;
+	text-align: start;
+}
+#toggle-music.open > #music-panel {
+	display: block;
+}
+.music-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.45vw;
+	width: 30vw;
+	height: 2.8vw;
+	padding: 0 0.7vw 0 0.5vw;
+	box-sizing: border-box;
+	border-radius: 1.4vw;
+	background: linear-gradient(to bottom, rgba(38, 30, 20, 0.96), rgba(14, 11, 8, 0.96));
+	box-shadow: inset 0 -0.12vw 0 rgba(218, 165, 32, 0.7), 0 0.25vw 0.9vw rgba(0, 0, 0, 0.75);
+	transform-origin: left center;
+	animation: music-bar-in 0.2s ease-out;
+}
+@keyframes music-bar-in {
+	from { opacity: 0; transform: scaleX(0.3); }
+}
+
+.music-btn {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.9vw;
+	height: 1.9vw;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	color: #d9c08a;
+	cursor: pointer;
+}
+#music-panel :is(button, .music-progress) * {
+	cursor: inherit;
+}
+.music-btn > svg {
+	width: 1.3vw;
+	height: 1.3vw;
+	fill: currentColor;
+}
+.music-btn:hover {
+	color: #fff3d0;
+	background-color: rgba(218, 165, 32, 0.15);
+}
+.music-play {
+	width: 2.1vw;
+	height: 2.1vw;
+	color: #1a140c;
+	background-color: goldenrod;
+}
+.music-play:hover {
+	color: #000;
+	background-color: #f0c040;
+}
+.music-play .music-icon-pause,
+.music-play.playing .music-icon-play {
+	display: none;
+}
+.music-play.playing .music-icon-pause {
+	display: block;
+}
+.music-mute .music-muted-x {
+	display: none;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+}
+.music-mute.quiet .music-wave-2,
+.music-mute.muted :is(.music-wave-1, .music-wave-2) {
+	display: none;
+}
+.music-mute.muted .music-muted-x {
+	display: inline;
+}
+.music-list-toggle.active {
+	color: goldenrod;
+	background-color: rgba(218, 165, 32, 0.18);
+}
+
+/* Title and time on one line, thin progress line under them */
+.music-now-info {
+	flex: 1;
+	min-width: 0;
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: baseline;
+	column-gap: 0.4vw;
+	margin: 0 0.3vw;
+}
+.music-now-title {
+	overflow: hidden;
+	color: #f3dfae;
+	font-size: 0.95vw;
+	font-weight: normal;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.music-now-time {
+	color: rgba(217, 192, 138, 0.6);
+	font-size: 0.75vw;
+	font-variant-numeric: tabular-nums;
+}
+.music-progress {
+	grid-column: 1 / -1;
+	position: relative;
+	height: 0.7vw;
+	cursor: pointer;
+}
+.music-progress::before,
+.music-progress-fill {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 0;
+	height: 0.15vw;
+	translate: 0 -50%;
+}
+.music-progress::before {
+	right: 0;
+	background-color: rgba(120, 104, 76, 0.5);
+}
+.music-progress-fill {
+	background-color: goldenrod;
+	box-shadow: 0 0 0.3vw rgba(218, 165, 32, 0.8);
+}
+.music-progress:hover::before,
+.music-progress:hover .music-progress-fill {
+	height: 0.3vw;
+}
+.music-progress.disabled {
+	cursor: default;
+	pointer-events: none;
+}
+
+/* Short volume slider: a plain line with a small gold dot */
+.music-volume {
+	--vol: 50%;
+	flex: none;
+	width: 4.5vw;
+	height: 1.2vw;
+	margin: 0;
+	background: none;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+}
+.music-volume::-webkit-slider-runnable-track {
+	height: 0.2vw;
+	background: linear-gradient(to right, #d9c08a var(--vol), rgba(120, 104, 76, 0.5) var(--vol));
+}
+.music-volume::-moz-range-track {
+	height: 0.2vw;
+	background: linear-gradient(to right, #d9c08a var(--vol), rgba(120, 104, 76, 0.5) var(--vol));
+}
+.music-volume::-webkit-slider-thumb {
+	width: 0.8vw;
+	height: 0.8vw;
+	margin-top: -0.3vw;
+	border: 0;
+	border-radius: 50%;
+	background-color: goldenrod;
+	-webkit-appearance: none;
+}
+.music-volume::-moz-range-thumb {
+	width: 0.8vw;
+	height: 0.8vw;
+	border: 0;
+	border-radius: 50%;
+	background-color: goldenrod;
+}
+.music-volume:focus-visible {
+	outline: 0.1vw solid goldenrod;
+	outline-offset: 0.2vw;
+}
+
+/* Track list: only when asked for, stacked above the right end of the bar */
+.music-tracks {
+	display: none;
+	position: absolute;
+	right: 0;
+	bottom: calc(100% + 0.35vw);
+	width: 13vw;
+	max-height: 18vw;
+	overflow-y: auto;
+	margin: 0;
+	padding: 0.3vw;
+	box-sizing: border-box;
+	border-radius: 0.4vw;
+	background-color: rgba(14, 11, 8, 0.96);
+	box-shadow: inset 0 0.12vw 0 rgba(218, 165, 32, 0.7), 0 0.25vw 0.9vw rgba(0, 0, 0, 0.75);
+	list-style: none;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(218, 165, 32, 0.5) transparent;
+}
+#music-panel.list-open .music-tracks {
+	display: block;
+}
+.music-tracks button {
+	display: flex;
+	align-items: baseline;
+	gap: 0.4vw;
+	width: 100%;
+	padding: 0.2vw 0.4vw;
+	border: 0;
+	border-left: 0.15vw solid transparent;
+	background: none;
+	color: rgba(243, 223, 174, 0.7);
+	font-family: inherit;
+	font-size: 0.9vw;
+	text-align: start;
+	cursor: pointer;
+}
+.music-tracks button > span {
+	flex: 1;
+}
+.music-tracks button > small {
+	color: rgba(217, 192, 138, 0.45);
+	font-size: 0.75vw;
+	font-variant-numeric: tabular-nums;
+}
+.music-tracks button:hover {
+	background-color: rgba(218, 165, 32, 0.1);
+	color: #fff3d0;
+}
+.music-tracks li.current button {
+	border-left-color: goldenrod;
+	color: goldenrod;
+}
+
+/* ---------- settings window (settings.js) ---------- */
+
+#settings-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 1500;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85));
+	font-family: Arial Narrow, sans-serif;
+	animation: settings-fade-in 0.15s ease-out;
+}
+#settings-modal.hide {
+	display: none;
+}
+@keyframes settings-fade-in {
+	from { opacity: 0; }
+}
+
+.settings-window {
+	display: flex;
+	flex-direction: column;
+	width: 50vw;
+	height: 30vw;
+	border: 1px solid #6b5a3a;
+	border-radius: 0.3vw;
+	background: linear-gradient(to bottom, rgba(34, 27, 18, 0.98), rgba(12, 10, 7, 0.98));
+	box-shadow: 0 0 0 0.2vw rgba(0, 0, 0, 0.6), inset 0 0 2vw rgba(0, 0, 0, 0.6), 0 1vw 3vw rgba(0, 0, 0, 0.8);
+	color: #d9c08a;
+	animation: settings-window-in 0.18s ease-out;
+}
+@keyframes settings-window-in {
+	from { opacity: 0; transform: translateY(1vw) scale(0.98); }
+}
+
+/* Title bar */
+.settings-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1vw 1.4vw 0.6vw;
+}
+.settings-header h2 {
+	margin: 0;
+	color: #f3e6c4;
+	font-size: 1.6vw;
+	font-weight: normal;
+	letter-spacing: 0.2vw;
+	text-transform: uppercase;
+	text-shadow: 0 0 0.6vw rgba(218, 165, 32, 0.35);
+}
+.settings-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2vw;
+	height: 2vw;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 0.2vw;
+	background: none;
+	color: #8a7a58;
+}
+.settings-close > svg {
+	width: 1.2vw;
+	height: 1.2vw;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2.2;
+	stroke-linecap: round;
+}
+.settings-close:hover,
+.settings-close:focus-visible {
+	outline: none;
+	border-color: #6b5a3a;
+	color: #f3e6c4;
+}
+
+/* Tabs */
+.settings-tabs {
+	display: flex;
+	gap: 0.3vw;
+	padding: 0 1.4vw;
+	border-bottom: 1px solid #4a3e28;
+}
+.settings-tabs > button {
+	position: relative;
+	padding: 0.6vw 1.6vw 0.7vw;
+	border: 0;
+	background: none;
+	color: #8a7a58;
+	font-family: inherit;
+	font-size: 1.1vw;
+	letter-spacing: 0.12vw;
+	text-transform: uppercase;
+	transition: color 0.15s ease;
+}
+.settings-tabs > button::after {
+	content: "";
+	position: absolute;
+	left: 0.6vw;
+	right: 0.6vw;
+	bottom: -1px;
+	height: 0.15vw;
+	background-color: goldenrod;
+	box-shadow: 0 0 0.5vw rgba(218, 165, 32, 0.8);
+	transform: scaleX(0);
+	transition: transform 0.15s ease;
+}
+.settings-tabs > button:hover,
+.settings-tabs > button:focus-visible {
+	outline: none;
+	color: #d8c8a0;
+}
+.settings-tabs > button[aria-selected="true"] {
+	color: #f3e6c4;
+}
+.settings-tabs > button[aria-selected="true"]::after {
+	transform: scaleX(1);
+}
+
+/* Content */
+.settings-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 0.8vw 1.4vw;
+	scrollbar-width: thin;
+}
+.settings-body > section.hide {
+	display: none;
+}
+.settings-row {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	column-gap: 1.2vw;
+	padding: 0.9vw 0.8vw;
+	border-bottom: 1px solid rgba(107, 90, 58, 0.35);
+	transition: background-color 0.15s ease;
+}
+.settings-row:hover {
+	background-color: rgba(218, 165, 32, 0.05);
+}
+.settings-row-audio {
+	grid-template-columns: 1fr auto 13vw 3.2vw;
+}
+.settings-row-top {
+	align-items: start;
+}
+.settings-label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25vw;
+	min-width: 0;
+}
+.settings-label > span {
+	color: #f3dfae;
+	font-size: 1.15vw;
+}
+.settings-label > small {
+	color: rgba(217, 192, 138, 0.55);
+	font-size: 0.85vw;
+}
+
+/* On/off switch */
+.settings-switch {
+	position: relative;
+	display: block;
+	width: 3vw;
+	height: 1.5vw;
+}
+.settings-switch > input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	opacity: 0;
+	z-index: 1;
+}
+.settings-switch > span {
+	position: absolute;
+	inset: 0;
+	border: 1px solid #6b5a3a;
+	border-radius: 0.75vw;
+	background-color: rgba(0, 0, 0, 0.6);
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.settings-switch > span::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 0.2vw;
+	width: 1vw;
+	height: 1vw;
+	border-radius: 50%;
+	background-color: #8a7a58;
+	translate: 0 -50%;
+	transition: left 0.15s ease, background-color 0.15s ease;
+}
+.settings-switch > input:checked + span {
+	border-color: goldenrod;
+	background-color: rgba(218, 165, 32, 0.25);
+}
+.settings-switch > input:checked + span::after {
+	left: calc(100% - 1.2vw);
+	background-color: goldenrod;
+	box-shadow: 0 0 0.4vw rgba(218, 165, 32, 0.8);
+}
+.settings-switch > input:focus-visible + span {
+	outline: 0.1vw solid goldenrod;
+	outline-offset: 0.15vw;
+}
+
+/* Volume slider */
+.settings-slider {
+	--vol: 50%;
+	width: 100%;
+	height: 1.4vw;
+	margin: 0;
+	background: none;
+	appearance: none;
+	-webkit-appearance: none;
+}
+.settings-slider::-webkit-slider-runnable-track {
+	height: 0.25vw;
+	background: linear-gradient(to right, goldenrod var(--vol), rgba(120, 104, 76, 0.5) var(--vol));
+}
+.settings-slider::-moz-range-track {
+	height: 0.25vw;
+	background: linear-gradient(to right, goldenrod var(--vol), rgba(120, 104, 76, 0.5) var(--vol));
+}
+.settings-slider::-webkit-slider-thumb {
+	width: 1vw;
+	height: 1vw;
+	margin-top: -0.375vw;
+	border: 0.12vw solid #1a140c;
+	border-radius: 50%;
+	background-color: #f0c040;
+	box-shadow: 0 0 0.4vw rgba(218, 165, 32, 0.8);
+	-webkit-appearance: none;
+}
+.settings-slider::-moz-range-thumb {
+	width: 1vw;
+	height: 1vw;
+	border: 0.12vw solid #1a140c;
+	border-radius: 50%;
+	background-color: #f0c040;
+	box-shadow: 0 0 0.4vw rgba(218, 165, 32, 0.8);
+}
+.settings-slider:focus-visible {
+	outline: 0.1vw solid goldenrod;
+	outline-offset: 0.3vw;
+}
+.settings-row-audio > output {
+	color: #f3dfae;
+	font-size: 1vw;
+	font-variant-numeric: tabular-nums;
+	text-align: end;
+}
+/* Channel switched off: the volume is kept but shown dimmed */
+.settings-row.off :is(.settings-slider, output) {
+	opacity: 0.35;
+}
+
+/* Language options */
+.settings-options {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4vw;
+	width: 16vw;
+}
+.settings-options > button {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	padding: 0.55vw 0.9vw;
+	border: 1px solid #4a3e28;
+	border-radius: 0.2vw;
+	background-color: rgba(0, 0, 0, 0.45);
+	color: #8a7a58;
+	font-family: inherit;
+	font-size: 1.1vw;
+	transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+.settings-options > button > small {
+	font-size: 0.8vw;
+	letter-spacing: 0.08vw;
+	opacity: 0.7;
+}
+.settings-options > button:hover,
+.settings-options > button:focus-visible {
+	outline: none;
+	border-color: #6b5a3a;
+	color: #d8c8a0;
+}
+.settings-options > button[aria-checked="true"] {
+	border-color: goldenrod;
+	background-color: rgba(218, 165, 32, 0.15);
+	color: #f3e6c4;
+	box-shadow: inset 0.2vw 0 0 goldenrod;
 }
