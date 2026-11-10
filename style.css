@@ -459,6 +459,12 @@ html {
 	background-size:cover;
 	background-position: center;
 }
+/* Empty slots past the first/last card: Carousel.update() marks them .hide, but the
+   display above outranks .hide. Keep their space in the row and hide them, so the
+   :hover glow stuck after a tap on mobile does not outline a card that is not there. */
+#carousel .card-lg.hide {
+	visibility: hidden;
+}
 
 #carousel .card-description {
 	left: 35.35%;
@@ -479,77 +485,98 @@ html {
 
 /* --------------------- popup ---------------------------  */
 
+/* Same look as the settings window (#settings-modal / .settings-window) */
 #popup {
 	position: absolute;
-    width: 100%;
-    height: calc(100vw * 1080 / 1920);
-    background-color: rgba(10,10,10,.95);
-    z-index: 1000;
-    /* background-image: url(img/boardtest10.png); */
-    /* background-size: contain; */
+	width: 100%;
+	height: calc(100vw * 1080 / 1920);
+	z-index: 1000;
+	/* Overridden inline by Popup with the requested opacity */
+	background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.95));
+	font-family: Arial Narrow, sans-serif;
 }
-
+#popup:not(.hide) {
+	animation: settings-fade-in 0.15s ease-out;
+}
 
 #popup > div {
-    margin-top: -89px;
-    width: 26.5%;
-    border: .2vw solid rgb(60,60,60);
-    padding: 0 0.5vw;
-    background-color: rgb(20,20,20);
+	display: flex;
+	flex-direction: column;
+	width: 30vw;
+	border: 1px solid #6b5a3a;
+	border-radius: 0.3vw;
+	background: linear-gradient(to bottom, rgba(34, 27, 18, 0.98), rgba(12, 10, 7, 0.98));
+	box-shadow: 0 0 0 0.2vw rgba(0, 0, 0, 0.6), inset 0 0 2vw rgba(0, 0, 0, 0.6), 0 1vw 3vw rgba(0, 0, 0, 0.8);
+	color: #d9c08a;
+	animation: settings-window-in 0.18s ease-out;
 }
 
+/* Title bar */
 #popup h3 {
-    display: block;
-    font-size: 1.05vw;
-    text-transform: uppercase;
-    color: grey;
-    text-align: center;
-    line-height: 100%;
+	margin: 0;
+	padding: 1vw 1.4vw 0.7vw;
+	border-bottom: 1px solid #4a3e28;
+	color: #f3e6c4;
+	font-size: 1.6vw;
+	font-weight: normal;
+	letter-spacing: 0.2vw;
+	text-transform: uppercase;
+	text-shadow: 0 0 0.6vw rgba(218, 165, 32, 0.35);
+}
+#popup h3:empty {
+	display: none;
 }
 
 #popup p {
-    text-align: center;
-    font-size: 1.23vw;
-    padding-top: .6vw;
-    color: tan;
+	margin: 0;
+	padding: 1.2vw 1.4vw;
+	color: #f3dfae;
+	font-size: 1.15vw;
+	line-height: 1.4;
+}
+#popup p:empty {
+	display: none;
 }
 
+/* Actions */
 #popup > div > div {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: .2vw;
-    min-width: 10%;
-    width: fit-content;
-    margin: -1.4vw auto 0;
-    border: .2vw solid rgb(25,25,25);
-    background-color: black;
-    top: 1.3vw;
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.6vw;
+	padding: 0.9vw 1.4vw 1.1vw;
+	border-top: 1px solid rgba(107, 90, 58, 0.35);
 }
 
 #popup button {
-
-    display: inline-block;
-    width: auto;
-    height: 1.8vw;
-    border: .2vw solid rgb(40,40,40);
-    background-color: rgb(20,20,20);
-    font-size: 1vw;
-    text-shadow: 1vw 1vw 1vw black;
-	text-transform: capitalize;
-	margin: 0 0.3vw;
-	transition: color 0.1s, border-color 0.1s;
+	min-width: 8vw;
+	padding: 0.55vw 1.2vw;
+	border: 1px solid #4a3e28;
+	border-radius: 0.2vw;
+	background-color: rgba(0, 0, 0, 0.45);
+	color: #8a7a58;
+	font-family: inherit;
+	font-size: 1.1vw;
+	letter-spacing: 0.12vw;
+	text-transform: uppercase;
+	transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
 }
-#popup button:hover {
-	box-shadow: 0 0 1px rgba(255, 255, 255, .5);
-	border-color: rgb(70, 70, 70);
+#popup button:hover,
+#popup button:focus-visible {
+	outline: none;
+	border-color: #6b5a3a;
+	color: #d8c8a0;
 }
-
-#popup button:first-child { color: green; }
-#popup button:first-child:hover { color: lightgreen; }
-#popup button:last-child {color: darkred; }
-#popup button:last-child:hover {color: red; }
+/* Primary (first) action highlighted like a selected settings option */
+#popup button:first-child {
+	border-color: goldenrod;
+	background-color: rgba(218, 165, 32, 0.15);
+	color: #f3e6c4;
+}
+#popup button:first-child:hover,
+#popup button:first-child:focus-visible {
+	background-color: rgba(218, 165, 32, 0.25);
+	box-shadow: 0 0 0.5vw rgba(218, 165, 32, 0.5);
+}
 
 /* --------------------- end screen ---------------------------  */
 
@@ -1408,16 +1435,28 @@ main { background-image: url('img/boardtest8.png'); }
 	transform: translateX(-50%);
 	width: auto;
 	min-width: 6%;
-	padding: 0 0.8vw;
+	padding: 0 1.4vw;
 	height: 3%;
-	font-size: 0.98vw;
 	white-space: nowrap;
-	color: white;
-	background-color: rgb(20,20,20);
-	border: 0.1vw ridge rgb(30,30,30);
+	/* Same look as the primary button of the settings/popup windows */
+	border: 1px solid goldenrod;
+	border-radius: 0.2vw;
+	background-color: rgba(218, 165, 32, 0.15);
+	box-shadow: 0 0 0 0.15vw rgba(0, 0, 0, 0.6), inset 0 0 1vw rgba(0, 0, 0, 0.5);
+	color: #f3e6c4;
+	font-family: Arial Narrow, sans-serif;
+	font-size: 1.05vw;
+	letter-spacing: 0.12vw;
+	text-transform: uppercase;
+	text-shadow: 0 0 0.6vw rgba(218, 165, 32, 0.35);
+	transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
-#start-game:hover {
-	box-shadow: 0 0 0.75vw white;
+#start-game:hover,
+#start-game:focus-visible {
+	outline: none;
+	background-color: rgba(218, 165, 32, 0.25);
+	box-shadow: 0 0 0 0.15vw rgba(0, 0, 0, 0.6), 0 0 0.6vw rgba(218, 165, 32, 0.6);
+	color: #fff3d0;
 }
 
 #opponent-preview {
@@ -1505,6 +1544,84 @@ main { background-image: url('img/boardtest8.png'); }
 #card-deck-title {
 	top: 7.8%;
 	left: 84.45%;
+}
+
+/* Filter tabs above each card panel, as in The Witcher 3's deck builder */
+.card-filter-name {
+	position: absolute;
+	font-size: 1vw;
+	color: #c8c8c8;
+	text-transform: uppercase;
+	letter-spacing: .03em;
+	white-space: nowrap;
+}
+
+#card-bank-filter-name {
+	top: 11.2%;
+	left: 8.5%;
+}
+
+#card-deck-filter-name {
+	top: 11.55%;
+	right: 8.5%;
+	text-align: right;
+}
+
+.card-filters {
+	position: absolute;
+	top: 17.8%;
+	width: 32.2%;
+	display: flex;
+	justify-content: space-between;
+}
+
+#card-bank-filters {
+	left: 9.4%;
+}
+
+#card-deck-filters {
+	left: 59.5%;
+}
+
+.card-filters button {
+	position: relative;
+	width: 2.3vw;
+	height: 2.3vw;
+	padding: 0;
+	border: none;
+	background: none;
+	color: #5f4b3c;
+	cursor: pointer;
+}
+
+.card-filters button:hover {
+	color: #9f7d3e;
+}
+
+.card-filters button.active {
+	color: goldenrod;
+}
+
+.card-filters svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+/* The glow sits on the icon, not the button: a filter on the button would
+   also shadow its tooltip and trap it under the cards below. */
+.card-filters button.active svg {
+	filter: drop-shadow(0 0 .3vw goldenrod);
+}
+
+.card-filters button[data-title]:hover::after {
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.card-array .card-lg.filtered-out {
+	display: none;
 }
 
 /* ----------- cards ------------------*/

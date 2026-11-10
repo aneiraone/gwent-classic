@@ -97,13 +97,18 @@ var Music = {
 		this.listBtn.addEventListener("click", () => this.toggleList());
 		this.progress.addEventListener("pointerdown", e => this.seekTo(e));
 
-		// Browsers block autoplay until the user interacts with the page
+		// Browsers block autoplay until the user interacts with the page.
+		// Only some events count as that gesture: touchstart does not (mobile
+		// needs touchend/pointerup/click), so a blocked play() is retried on
+		// every gesture until the music really starts.
+		const gestures = ["pointerup", "touchend", "click", "keydown"];
+		const stopListening = () => gestures.forEach(t => window.removeEventListener(t, startOnInteraction, true));
 		const startOnInteraction = () => {
-			["click", "touchstart", "keydown"].forEach(t => window.removeEventListener(t, startOnInteraction, true));
-			if (Settings.music.isEnabled() && this.audio.paused)
+			if (Settings.music.isEnabled() && this.audio.paused && !document.hidden)
 				this.apply();
 		};
-		["click", "touchstart", "keydown"].forEach(t => window.addEventListener(t, startOnInteraction, true));
+		gestures.forEach(t => window.addEventListener(t, startOnInteraction, true));
+		this.audio.addEventListener("playing", stopListening, { once: true });
 
 		// Pause while the tab is hidden, resume when it is visible again
 		document.addEventListener("visibilitychange", () => {

@@ -7,7 +7,8 @@ const DURATION_CARD_PLACEMENT = 1000;
 const DUR_FADE_STEP = 10;
 
 // Seconds the Pass button must be held down to pass the round (0 = pass on a single click)
-const PASS_HOLD_SECONDS = 2;
+// TODO: hold-to-pass temporarily disabled (set back to 2 once the issue is resolved)
+const PASS_HOLD_SECONDS = 0;
 
 const CLICK_EVENT_SFX = () => AudioManager.playSFX('ui_card');
 
@@ -2203,6 +2204,14 @@ class UI {
 			player_me.passRound();
 			AudioManager.playSFX('pass');
 		};
+		if (PASS_HOLD_SECONDS <= 0) {
+			btn.addEventListener("click", () => {
+				if (btn.classList.contains("noclick")) return;
+				doPass();
+			}, false);
+			return;
+		}
+
 		const stop = () => {
 			if (timer === null) return;
 			clearInterval(timer);
@@ -2544,8 +2553,8 @@ class Popup {
 		main.children[2].children[0].innerHTML = (yesName) ? yesName : I18n.ui("yes");
 		main.children[2].children[1].innerHTML = (noName) ? noName : I18n.ui("no");
 
-		const bgColor = new RGBA(10, 10, 10, alpha);
-		this.elem.style.backgroundColor = bgColor.toString();
+		// Same vignette as the settings window, scaled by the requested opacity
+		this.elem.style.background = `radial-gradient(ellipse at center, rgba(0, 0, 0, ${(alpha * 0.58).toFixed(2)}), rgba(0, 0, 0, ${alpha}))`;
 		
 		this.elem.classList.remove("hide");
 		Popup.setCurrent(this);
@@ -2583,6 +2592,8 @@ class Popup {
 
 // Screen used to customize, import and export deck contents
 class DeckMaker {
+	static FILTERS = ["all", "close", "ranged", "siege", "hero", "weather", "special"];
+
 	constructor() {
 		this.elem = document.getElementById("deck-customization");
 		this.bank_elem = document.getElementById("card-bank");
@@ -2590,6 +2601,9 @@ class DeckMaker {
 		this.leader_elem = document.getElementById("card-leader");
 		this.leader_elem.children[1].addEventListener("click", () => this.selectLeader(), false);
 		this.leader_elem.children[1].addEventListener('mouseenter', CLICK_EVENT_SFX);
+		this.filter = {bank: "all", deck: "all"};
+		this.makeFilters("bank");
+		this.makeFilters("deck");
 		this.loadFactionDeck(Settings.lastFaction.get(), true);
 		I18n.onChange(() => document.getElementById("faction-description").innerHTML = I18n.factionDescription(this.faction));
 
@@ -2660,10 +2674,71 @@ class DeckMaker {
 		this.leader_elem.children[1].style.backgroundImage = largeURL(this.leader.card.deck + "_" + this.leader.card.filename);
 	}
 	
+	// Builds the filter tabs above the collection (side "bank") or the deck (side "deck"),
+	// in the order of The Witcher 3's deck builder.
+	makeFilters(side) {
+		const bar = document.getElementById("card-" + side + "-filters");
+		for (const filter of DeckMaker.FILTERS) {
+			const btn = document.createElement("button");
+			btn.type = "button";
+			btn.dataset.filter = filter;
+			I18n.setTitle(btn, DeckMaker.filterKey(filter));
+			btn.innerHTML = '<svg><use href="#filter-icon-' + filter + '"/></svg>';
+			btn.addEventListener("click", () => this.setFilter(side, filter), false);
+			btn.addEventListener("mouseenter", CLICK_EVENT_SFX, false);
+			bar.appendChild(btn);
+		}
+	}
+
+	static filterKey(filter) {
+		return "filter" + filter[0].toUpperCase() + filter.slice(1);
+	}
+
+	// Agile units show under both of their rows, heroes under their row and under "hero".
+	static matchesFilter(card_data, filter) {
+		switch (filter) {
+			case "close":
+			case "ranged":
+				return card_data.row === filter || card_data.row === "agile";
+			case "siege":
+				return card_data.row === filter;
+			case "hero":
+				return card_data.ability.split(" ").includes("hero");
+			case "weather":
+			case "special":
+				return card_data.deck === filter;
+			default:
+				return true;
+		}
+	}
+
+	setFilter(side, filter) {
+		this.filter[side] = filter;
+		(side === "bank" ? this.bank_elem : this.deck_elem).scrollTop = 0;
+		this.update();
+	}
+
+	// Marks the active tab, names it under the panel title and hides the cards it leaves out
+	updateFilters() {
+		for (const side of ["bank", "deck"]) {
+			const filter = this.filter[side];
+			for (const btn of document.getElementById("card-" + side + "-filters").children) {
+				btn.classList.toggle("active", btn.dataset.filter === filter);
+				btn.setAttribute("aria-pressed", btn.dataset.filter === filter);
+			}
+			I18n.setText(document.getElementById("card-" + side + "-filter-name"), DeckMaker.filterKey(filter));
+			for (const x of this[side])
+				x.elem.classList.toggle("filtered-out", !DeckMaker.matchesFilter(card_dict[x.index], filter));
+		}
+	}
+
 	// Constructs a bank of cards that can be used by the faction's deck.
 	// If a deck is provided, will not add cards to bank that are already in the deck.
 	makeBank(faction, deck) {
 		this.clear();
+		this.filter = {bank: "all", deck: "all"};
+		this.bank_elem.scrollTop = 0;
+		this.deck_elem.scrollTop = 0;
 		let cards = card_dict.map((c,i) => ({card:c, index:i})).filter(
 		p => [faction, "neutral", "weather", "special"].includes(p.card.deck) && p.card.row !== "leader");
 		
@@ -2745,6 +2820,7 @@ class DeckMaker {
 				hero += x.count;
 		}
 		this.stats = {total: total, units: units, special: special, strength: strength, hero: hero};
+		this.updateFilters();
 		this.updateFauxCard(this.bank_elem);
 		this.updateFauxCard(this.deck_elem);
 		this.updateStats();
@@ -2764,7 +2840,7 @@ class DeckMaker {
 		{
 			container.removeChild(fauxCard);
 		}
-		if (container.querySelectorAll(".card-lg:not(.hide)").length % 3 === 2)
+		if (container.querySelectorAll(".card-lg:not(.hide):not(.filtered-out)").length % 3 === 2)
 		{
 			container.appendChild(fauxCard);
 		}
