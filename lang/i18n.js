@@ -28,11 +28,27 @@ var I18n = {
 		}
 	},
 
+	// Initial language when the user has not chosen one: the first browser/OS
+	// language that is registered, or fallbackLanguage if none matches.
+	fallbackLanguage: "es",
+
+	detectLanguage() {
+		const preferred = (navigator.languages && navigator.languages.length)
+			? navigator.languages
+			: [navigator.language || navigator.userLanguage || ""];
+		for (const tag of preferred) {
+			const code = String(tag).toLowerCase().split("-")[0];
+			if (this.languages[code])
+				return code;
+		}
+		return this.languages[this.fallbackLanguage] ? this.fallbackLanguage : this.defaultLanguage;
+	},
+
 	getLanguage() {
 		if (this.current === null) {
 			let saved = null;
 			try { saved = localStorage.getItem(this.storageKey); } catch (e) {}
-			this.current = (saved && this.languages[saved]) ? saved : this.defaultLanguage;
+			this.current = (saved && this.languages[saved]) ? saved : this.detectLanguage();
 		}
 		return this.current;
 	},

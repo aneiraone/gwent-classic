@@ -1663,8 +1663,11 @@ class Game {
 	exitGame()
 	{
 		AudioManager.playSFX('warning');
+		// Popup.clear() always disables interaction, so remember whether the
+		// player could act before opening it and restore that on resume
+		const wasEnabled = !document.getElementsByTagName("main")[0].classList.contains("noclick");
 		ui.popup(
-			I18n.ui("resume"), ()=>{},
+			I18n.ui("resume"), ()=>ui.enablePlayer(wasEnabled),
 			I18n.ui("exit"), ()=>this.returnToCustomization(),
 			I18n.ui("quitTitle"), I18n.ui("quitDescription")
 		); 

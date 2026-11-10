@@ -34,6 +34,7 @@ Se agregó un gestor de idiomas y se sacaron todos los textos fijos del código.
   - `I18n.bindSwitch(root)`: llena el selector de idioma (`#lang-switch`) y lo mantiene sincronizado.
   - `I18n.onChange(fn)`: avisa cuando cambia el idioma.
   - El idioma elegido se guarda en `localStorage` (clave `gc-language`).
+  - Si no hay idioma guardado, se usa el idioma del navegador/sistema (`navigator.languages`) si está disponible; si no coincide ninguno, se usa español.
 - **`lang/cards/en.js`** y **`lang/cards/es.js`**: nombres de habilidades, descripciones de habilidades y descripciones de facciones.
 - **`lang/site/en.js`** y **`lang/site/es.js`**: textos de la interfaz, popups, notificaciones y advertencias del editor de mazos.
 

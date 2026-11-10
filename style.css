@@ -1536,14 +1536,21 @@ main { background-image: url('img/boardtest8.png'); }
 	color: #959595;
 }
 
+/* Titles on a single line: when they wrapped (e.g. "Colección de cartas")
+   the second line ran into the filter name below. */
 #card-bank-title {
 	top: 7.45%;
 	left: 8.5%;
+	white-space: nowrap;
 }
 
 #card-deck-title {
 	top: 7.8%;
-	left: 84.45%;
+	left: auto;
+	right: 8.5%;
+	width: auto;
+	text-align: right;
+	white-space: nowrap;
 }
 
 /* Filter tabs above each card panel, as in The Witcher 3's deck builder */
