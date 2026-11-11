@@ -12,6 +12,9 @@ html,body
     padding: 0px;
     overflow-x: visible;
 	scrollbar-width: none; /* disable srcrollbar for firefox */
+	/* Stop mobile browsers (iOS Safari in landscape) from enlarging the vw-sized text */
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
 }
 
 /* remove spacing between html elements */
@@ -1401,29 +1404,37 @@ main { background-image: url('img/boardtest8.png'); }
 	box-shadow: 0 0 .75vw goldenrod;
 }
 
+/* Flex column: the stats and the start button below them stack in normal flow,
+   so the button moves down instead of overlapping when mobile browsers enlarge the text */
 #deck-stats {
 	position: absolute;
 	width: 12%;
-	height: 30%;
 	top: 49.5%;
 	left: 44.05%;
+	display: flex;
+	flex-direction: column;
+	padding-top: 1vw;
+}
+
+#deck-stats > p {
+	margin: 0;
 }
 
 #deck-stats > p:nth-child(odd) {
 	color: #82735f;
 	font-size: 1.05vw;
+	line-height: 1.25;
 	text-align: center;
-	margin-bottom: -6.75%;
 }
 
 #deck-stats > p:nth-child(even) {
 	font-size: 1.2vw;
+	line-height: 1.65vw;
 	text-align: left;
 	color: #9f7d3e;
 	padding-left: 2.3vw;
 	margin-left: 3.95vw;
-	margin-bottom: -6.75%;
-	
+
 	background-repeat: no-repeat;
 	background-position: left;
 	background-size: 2.5vw;
@@ -1436,15 +1447,12 @@ main { background-image: url('img/boardtest8.png'); }
 #deck-stats > p:nth-child(10) { background-image: url('img/icons/deck_stats_hero.png'); }
 
 #start-game {
-	position: absolute;
-	top: 81.5%;
-	/* centered on the old position; grows with the text length */
-	left: 49.65%;
-	transform: translateX(-50%);
-	width: auto;
-	min-width: 6%;
-	padding: 0 1.4vw;
-	height: 3%;
+	/* Last item of #deck-stats: centered under the stats, grows with the text length */
+	align-self: center;
+	margin-top: 1.6vw;
+	min-width: 6vw;
+	padding: 0.3vw 1.4vw;
+	line-height: 1.2;
 	white-space: nowrap;
 	/* Same look as the primary button of the settings/popup windows */
 	border: 1px solid goldenrod;
