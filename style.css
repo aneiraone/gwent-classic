@@ -800,7 +800,9 @@ main { background-image: url('img/boardtest8.png'); }
 }
 
 .current-turn {
-	box-shadow: -3vw 0px 1vw 0.1vw goldenrod;
+	box-shadow: -1vw 0px 1vw 0.1vw goldenrod;
+	/* Cut the glow at the board's left edge so it does not spill past the board (e.g. into the black side bars) */
+	clip-path: inset(-100vw -100vw -100vw 0);
 }
 
 #stats-op {
@@ -1120,6 +1122,11 @@ main { background-image: url('img/boardtest8.png'); }
 	box-sizing: border-box;
 }
 
+/* Row of cards to pick from (e.g. Decoy): same golden glow as the current turn highlight */
+.row-cards.card-selectable:hover {
+	box-shadow: 0 0 1vw 0.1vw goldenrod;
+}
+
 .card-selectable > .card:hover {
 	/*box-shadow: 0 0 .2vw rgba(255,255,0, 0.5);*/
 	border: .12vw outset goldenrod;
@@ -1235,7 +1242,8 @@ main { background-image: url('img/boardtest8.png'); }
 	position: absolute;
 	width: 100%;
 	height: calc(100vw * 1080 / 1920);
-	background-color: rgba(10,10,10,.95);
+	/* Opaque, like the original game's full-screen deck builder: the board must not show through */
+	background-color: rgb(10,10,10);
 	z-index: 85;
 }
 
